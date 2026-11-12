@@ -52,7 +52,7 @@ jobs:
       - run: cp build/app/outputs/flutter-apk/app-release.apk "brain_${VER}.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets
+          name: release-assets-apk
           path: "brain_${{ env.VER }}.apk"
 
   macos:
@@ -73,7 +73,7 @@ jobs:
           hdiutil create -volname brain -srcfolder "$APP" -ov -format UDZO "brain_${VER}.dmg"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets
+          name: release-assets-macos
           path: "brain_${{ env.VER }}.dmg"
 
   ios:
@@ -92,7 +92,7 @@ jobs:
         run: ditto -c -k --sequesterRsrc --keepParent "build/ios/iphoneos/Runner.app" "brain_${VER}_ios_unsigned.zip"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets
+          name: release-assets-ios
           path: "brain_${{ env.VER }}_ios_unsigned.zip"
 
   windows:
@@ -112,7 +112,7 @@ jobs:
         run: Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "brain_${{ env.VER }}_windows.zip"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets
+          name: release-assets-windows
           path: "brain_${{ env.VER }}_windows.zip"
 
   publish:
@@ -124,7 +124,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: release-assets
+          pattern: release-assets-*
+          merge-multiple: true
           path: dist
       - name: Create GitHub release
         run: |
