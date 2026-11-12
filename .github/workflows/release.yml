@@ -128,20 +128,32 @@ jobs:
           merge-multiple: true
           path: dist
       - name: Create GitHub release
+        # Re-resolve the tag here, not in the version job: two runs building
+        # at once can otherwise compute the same suffix and collide at
+        # publish time. Assets are renamed to the final tag.
         run: |
+          BASE="${VER%%_*}"
+          TAG="brain_${BASE}"; n=2
+          while gh api "repos/${{ github.repository }}/releases/tags/${TAG}" --silent 2>/dev/null; do
+            TAG="brain_${BASE}_${n}"; n=$((n+1))
+          done
+          FINAL="${TAG#brain_}"
+          for f in dist/brain_${VER}*; do
+            mv "$f" "${f/brain_${VER}/brain_${FINAL}}"
+          done
           cat > notes.md <<EOF
-          brain ${VER}
+          brain ${FINAL}
 
           | Platform | Asset |
           |---|---|
-          | Android | brain_${VER}.apk |
-          | macOS | brain_${VER}.dmg |
-          | iOS | brain_${VER}_ios_unsigned.zip (unsigned, needs re-signing to install) |
-          | Windows | brain_${VER}_windows.zip |
+          | Android | brain_${FINAL}.apk |
+          | macOS | brain_${FINAL}.dmg |
+          | iOS | brain_${FINAL}_ios_unsigned.zip (unsigned, needs re-signing to install) |
+          | Windows | brain_${FINAL}_windows.zip |
 
           macOS: unsigned build. After installing, run
           \`xattr -dr com.apple.quarantine /Applications/brain.app\` once.
           EOF
-          gh release create "brain_${VER}" dist/* \
+          gh release create "brain_${FINAL}" dist/* \
             --repo "${{ github.repository }}" --target "${{ github.sha }}" \
-            --title "brain ${VER}" --notes-file notes.md
+            --title "brain ${FINAL}" --notes-file notes.md
