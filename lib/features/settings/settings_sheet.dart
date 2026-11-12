@@ -79,6 +79,9 @@ class _SettingsSheet extends ConsumerWidget {
                     max: VaultConfig.maxAutosaveMs.toDouble(),
                     onChanged: (v) => ref
                         .read(vaultConfigProvider.notifier)
+                        .preview(config.copyWith(autosaveMs: v.round())),
+                    onChangeEnd: (v) => ref
+                        .read(vaultConfigProvider.notifier)
                         .update(config.copyWith(autosaveMs: v.round())),
                   ),
                 ),

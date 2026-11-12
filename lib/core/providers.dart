@@ -141,6 +141,9 @@ class VaultConfigNotifier extends Notifier<VaultConfig> {
     return path == null ? VaultConfig.defaultConfig : VaultConfig.load(path);
   }
 
+  /// Update state only — for live slider drags before persisting.
+  void preview(VaultConfig config) => state = config;
+
   Future<void> update(VaultConfig config) async {
     state = config;
     final path = ref.read(vaultPathProvider);
