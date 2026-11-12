@@ -192,7 +192,7 @@ const _shortcuts = [
   ('Ctrl/Cmd+P  ·  K', 'Quick open — find files'),
   ('Ctrl/Cmd+N', 'New note'),
   ('Ctrl/Cmd+Shift+N', 'New folder'),
-  ('Ctrl/Cmd+Shift+D', 'Today\'s daily log'),
+  ('Ctrl/Cmd+D', 'Today\'s daily log'),
   ('Ctrl/Cmd+E', 'Toggle edit / preview'),
   ('Ctrl/Cmd+0', 'Focus sidebar'),
   ('Ctrl/Cmd+1', 'Focus editor'),

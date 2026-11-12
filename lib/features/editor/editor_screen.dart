@@ -564,7 +564,7 @@ class _EmptyEditor extends StatelessWidget {
           if (kbd) ...[
             const SizedBox(height: 14),
             Text(
-              'Ctrl/Cmd+P quick open · Ctrl/Cmd+N new note\nCtrl/Cmd+Shift+D daily log · Ctrl/Cmd+, settings',
+              'Ctrl/Cmd+P quick open · Ctrl/Cmd+N new note\nCtrl/Cmd+D daily log · Ctrl/Cmd+, settings',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: theme.textDim.withValues(alpha: 0.7),

@@ -43,7 +43,7 @@ logs). brain reads that layout; it only *writes* standard markdown links.
 - Two real layout bugs found by the new tests and fixed: sidebar tab row
   overflow at ~800px wide; settings sheet not scrollable in short windows.
 - Feature batch (user request): shortcuts reworked (Cmd+P/K quick open,
-  Cmd+N note, Cmd+Shift+N folder, Cmd+Shift+D daily, Cmd+0/1 focus
+  Cmd+N note, Cmd+Shift+N folder, Cmd+D daily, Cmd+0/1 focus
   sidebar/editor, Cmd+, settings; Cmd+S removed — autosave-only).
   Per-vault `.purplebrain/config.json` (`autosave_ms`, slider in Settings,
   100–2000ms). Sidebar split into "Daily logs" (`yyyymmdd` dirs) + "Notes".

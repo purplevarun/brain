@@ -41,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
 /// Global shortcuts, handled at the hardware-keyboard level so they fire
 /// everywhere — including while a TextField or menu has focus:
 /// Cmd/Ctrl+P (or K) quick open, N new note, Shift+N new folder,
-/// Shift+D daily log, E toggle mode, B sidebar, 0 focus sidebar,
+/// D daily log, E toggle mode, B sidebar, 0 focus sidebar,
 /// Shift+0 reset zoom, 1 focus editor, =/+ zoom in, - zoom out,
 /// , settings. Saving is autosave-only.
 class _Shortcuts extends ConsumerStatefulWidget {
@@ -87,7 +87,6 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
             ? NoteActions.newFolder(context, ref)
             : NoteActions.newNote(context, ref);
       case LogicalKeyboardKey.keyD:
-        if (!shift) return false;
         openDailyLog(context, ref);
       case LogicalKeyboardKey.digit0:
       case LogicalKeyboardKey.numpad0:
@@ -246,7 +245,7 @@ class VaultSidebar extends ConsumerWidget {
                   ),
                   _Action(
                     icon: Icons.edit_calendar_outlined,
-                    tooltip: 'Daily log (Ctrl/Cmd+Shift+N)',
+                    tooltip: 'Daily log (Ctrl/Cmd+D)',
                     onTap: () => openDailyLog(context, ref),
                   ),
                   _Action(
@@ -342,7 +341,7 @@ class _SidebarSectionsState extends ConsumerState<_SidebarSections> {
           'Daily Notes',
           fileBody(
             daily,
-            'No daily logs yet —\nCtrl/Cmd+Shift+D creates today\'s.',
+            'No daily logs yet —\nCtrl/Cmd+D creates today\'s.',
           ),
         ),
         _section(
