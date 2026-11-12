@@ -42,6 +42,15 @@ logs). brain reads that layout; it only *writes* standard markdown links.
   `extractVaultArchive` seams for tests). Import also accepts legacy `.zip`.
 - Two real layout bugs found by the new tests and fixed: sidebar tab row
   overflow at ~800px wide; settings sheet not scrollable in short windows.
+- Feature batch (user request): shortcuts reworked (Cmd+P/K quick open,
+  Cmd+N note, Cmd+Shift+N folder, Cmd+Shift+D daily, Cmd+0/1 focus
+  sidebar/editor, Cmd+, settings; Cmd+S removed — autosave-only).
+  Per-vault `.purplebrain/config.json` (`autosave_ms`, slider in Settings,
+  100–2000ms). Sidebar split into "Daily logs" (`yyyymmdd` dirs) + "Notes".
+  New-vault flow asks for a name. New crystal/neural app icon (generated
+  `brain_icon_1024` via Swift, all platform sizes) + `BrainMark` painter
+  replaces `Icons.psychology`. macOS menu bar strips Edit/View/Window/Help
+  in AppDelegate.
 - Next step when this lands: user installs the new `brain_<date>.dmg` and
   verifies the three vault buttons + export/import on the real app.
 

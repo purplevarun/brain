@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:brain/core/providers.dart';
+import 'package:brain/core/vault_config.dart';
 import 'package:brain/features/vault/backup.dart';
 import 'package:brain/main.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart' show TextField;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,19 +89,22 @@ void main() {
     expect(find.text('Open a vault folder'), findsNothing);
   });
 
-  testWidgets('create a new vault → brain_vault dir + opens it', (
+  testWidgets('create a new vault → name dialog → dir + opens it', (
     tester,
   ) async {
     fake.directoryResult = tmp.path;
 
     await pumpApp(tester);
     await tapAndFlush(tester, find.text('Create a new vault'));
+    // Name dialog → custom name.
+    await tester.enterText(find.byType(TextField), 'my_custom_vault');
+    await tapAndFlush(tester, find.text('Create'));
 
-    final created = Directory(p.join(tmp.path, 'brain_vault'));
+    final created = Directory(p.join(tmp.path, 'my_custom_vault'));
     expect(created.existsSync(), isTrue);
     expect(File(p.join(created.path, 'README.md')).existsSync(), isTrue);
     expect(prefs.getString('vault_path'), created.path);
-    expect(find.text('brain_vault'), findsOneWidget);
+    expect(find.text('my_custom_vault'), findsOneWidget);
   });
 
   testWidgets('picker errors surface as snackbars, not silent dead buttons', (
@@ -196,6 +201,21 @@ void main() {
     expect(File(p.join(dst.path, 'a.md')).readAsStringSync(), 'alpha');
     expect(File(p.join(dst.path, 'sub', 'b.md')).readAsStringSync(), 'beta');
     expect(File(p.join(dst.path, '.hidden')).existsSync(), isFalse);
+  });
+
+  test('vault config persists autosave_ms in .purplebrain/config.json', () async {
+    final vault = Directory(p.join(tmp.path, 'cfg_vault'))..createSync();
+    await const VaultConfig(autosaveMs: 250).save(vault.path);
+    final f = File(p.join(vault.path, '.purplebrain', 'config.json'));
+    expect(f.existsSync(), isTrue);
+    expect(VaultConfig.load(vault.path).autosaveMs, 250);
+    // Out-of-range values clamp; missing/garbage file → defaults.
+    f.writeAsStringSync('{"autosave_ms": 5}');
+    expect(VaultConfig.load(vault.path).autosaveMs,
+        VaultConfig.minAutosaveMs);
+    f.writeAsStringSync('not json');
+    expect(VaultConfig.load(vault.path).autosaveMs,
+        VaultConfig.defaultConfig.autosaveMs);
   });
 }
 

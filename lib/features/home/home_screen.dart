@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/brain_mark.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../core/providers.dart';
 import '../browser/file_tree.dart';
@@ -40,8 +41,9 @@ SingleActivator _key(LogicalKeyboardKey k, {bool shift = false}) {
   return SingleActivator(k, meta: mac, control: !mac, shift: shift);
 }
 
-/// Global shortcuts: Cmd/Ctrl+K quick open, S save, E toggle mode,
-/// N new note, Shift+N daily log, B toggle sidebar, , settings.
+/// Global shortcuts: Cmd/Ctrl+P (or K) quick open, N new note,
+/// Shift+N new folder, Shift+D daily log, E toggle mode, B sidebar,
+/// 0 focus sidebar, 1 focus editor, , settings. Saving is autosave-only.
 class _Shortcuts extends ConsumerWidget {
   const _Shortcuts({required this.child});
 
@@ -51,16 +53,27 @@ class _Shortcuts extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return CallbackShortcuts(
       bindings: {
+        _key(LogicalKeyboardKey.keyP): () => showQuickOpen(context, ref),
         _key(LogicalKeyboardKey.keyK): () => showQuickOpen(context, ref),
-        _key(LogicalKeyboardKey.keyS): () =>
-            ref.read(editorActionsProvider)?.save(),
         _key(LogicalKeyboardKey.keyE): () =>
             ref.read(editModeProvider.notifier).state =
                 !ref.read(editModeProvider),
         _key(LogicalKeyboardKey.keyN): () =>
             NoteActions.newNote(context, ref),
         _key(LogicalKeyboardKey.keyN, shift: true): () =>
+            NoteActions.newFolder(context, ref),
+        _key(LogicalKeyboardKey.keyD, shift: true): () =>
             openDailyLog(context, ref),
+        _key(LogicalKeyboardKey.digit0): () {
+          ref.read(sidebarCollapsedProvider.notifier).state = false;
+          ref.read(sidebarFocusProvider).requestFocus();
+        },
+        _key(LogicalKeyboardKey.digit1): () {
+          ref.read(editModeProvider.notifier).state = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(editorFocusProvider).requestFocus();
+          });
+        },
         _key(LogicalKeyboardKey.keyB): () =>
             ref.read(sidebarCollapsedProvider.notifier).state =
                 !ref.read(sidebarCollapsedProvider),
@@ -160,7 +173,7 @@ class VaultSidebar extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(12, 10, 6, 6),
               child: Row(
                 children: [
-                  Icon(Icons.psychology, size: 20, color: theme.accent),
+                  BrainMark(size: 20, color: theme.accent),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Tooltip(
@@ -258,11 +271,14 @@ class VaultSidebar extends ConsumerWidget {
             ),
             Divider(height: 1, color: theme.border),
             Expanded(
-              child: switch (tab) {
-                1 => SearchPanel(onOpenFile: closeDrawerIfAny),
-                2 => TagPanel(onOpenFile: closeDrawerIfAny),
-                _ => FileTree(onOpenFile: closeDrawerIfAny),
-              },
+              child: Focus(
+                focusNode: ref.watch(sidebarFocusProvider),
+                child: switch (tab) {
+                  1 => SearchPanel(onOpenFile: closeDrawerIfAny),
+                  2 => TagPanel(onOpenFile: closeDrawerIfAny),
+                  _ => FileTree(onOpenFile: closeDrawerIfAny),
+                },
+              ),
             ),
           ],
         ),

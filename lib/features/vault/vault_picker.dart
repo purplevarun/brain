@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../app/brain_mark.dart';
 import '../../app/theme/brain_theme.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../core/platform_utils.dart';
@@ -28,7 +29,7 @@ class VaultPicker extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.psychology, size: 64, color: theme.accent),
+              BrainMark(size: 64, color: theme.accent),
               const SizedBox(height: 16),
               Text(
                 'brain',
@@ -107,7 +108,10 @@ class VaultPicker extends ConsumerWidget {
         dialogTitle: 'Choose where to create the vault',
       );
       if (parent == null || !context.mounted) return;
-      final dir = Directory(p.join(parent, 'brain_vault'));
+      final name = await _nameVault(context);
+      if (name == null || name.trim().isEmpty || !context.mounted) return;
+      final safe = name.trim().replaceAll(RegExp(r'[/\\]'), '_');
+      final dir = Directory(p.join(parent, safe));
       await dir.create(recursive: true);
       await File(p.join(dir.path, 'README.md')).writeAsString(
         '# brain vault\n\nYour notes live here as plain markdown files.\n',
@@ -118,6 +122,32 @@ class VaultPicker extends ConsumerWidget {
         SnackBar(content: Text('Could not create vault: $e')),
       );
     }
+  }
+
+  Future<String?> _nameVault(BuildContext context) {
+    final controller = TextEditingController(text: 'brain_vault');
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Name your vault'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Vault name'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _localVault(WidgetRef ref) async {

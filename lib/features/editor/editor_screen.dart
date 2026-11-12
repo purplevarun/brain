@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/brain_mark.dart';
 import '../../app/theme/brain_theme.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../core/brain_markdown.dart';
@@ -51,7 +52,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
     if (_loadedPath == null) return;
     if (mounted) ref.read(noteDirtyProvider.notifier).state = true;
     _autosave?.cancel();
-    _autosave = Timer(const Duration(milliseconds: 800), () => save());
+    final ms = ref.read(vaultConfigProvider).autosaveMs;
+    _autosave = Timer(Duration(milliseconds: ms), () => save());
   }
 
   @override
@@ -169,7 +171,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
             dirty: dirty,
             editMode: editMode,
             theme: theme,
-            onSave: save,
             onAttach: attachFiles,
             onToggleMode: () => ref
                 .read(editModeProvider.notifier)
@@ -205,6 +206,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
       color: theme.bg,
       child: TextField(
         controller: _controller,
+        focusNode: ref.read(editorFocusProvider),
         expands: true,
         maxLines: null,
         minLines: null,
@@ -370,7 +372,6 @@ class _EditorHeader extends StatelessWidget {
     required this.dirty,
     required this.editMode,
     required this.theme,
-    required this.onSave,
     required this.onAttach,
     required this.onToggleMode,
   });
@@ -379,7 +380,6 @@ class _EditorHeader extends StatelessWidget {
   final bool dirty;
   final bool editMode;
   final BrainTheme theme;
-  final VoidCallback onSave;
   final VoidCallback onAttach;
   final VoidCallback onToggleMode;
 
@@ -418,12 +418,6 @@ class _EditorHeader extends StatelessWidget {
             icon: Icons.attach_file,
             tooltip: 'Attach file',
             onTap: onAttach,
-            theme: theme,
-          ),
-          _HeaderIcon(
-            icon: Icons.save_outlined,
-            tooltip: 'Save (Ctrl/Cmd+S)',
-            onTap: onSave,
             theme: theme,
           ),
         ],
@@ -473,7 +467,7 @@ class _EmptyEditor extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.psychology, size: 56, color: theme.textDim.withValues(alpha: 0.5)),
+          BrainMark(size: 56, color: theme.textDim.withValues(alpha: 0.5)),
           const SizedBox(height: 12),
           Text(
             'brain',
@@ -491,7 +485,7 @@ class _EmptyEditor extends StatelessWidget {
           if (kbd) ...[
             const SizedBox(height: 14),
             Text(
-              'Ctrl/Cmd+K quick open · Ctrl/Cmd+N new note\nCtrl/Cmd+Shift+N daily log · Ctrl/Cmd+E edit/preview',
+              'Ctrl/Cmd+P quick open · Ctrl/Cmd+N new note\nCtrl/Cmd+Shift+D daily log · Ctrl/Cmd+, settings',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: theme.textDim.withValues(alpha: 0.7),

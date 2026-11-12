@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/search/search_service.dart';
 import 'frontmatter.dart';
 import 'models.dart';
+import 'vault_config.dart';
 import 'vault_store.dart';
 
 final sharedPrefsProvider = Provider<SharedPreferences>(
@@ -124,3 +126,28 @@ final tagFilterProvider = StateProvider<String?>((ref) => null);
 
 /// Collapse state of the desktop sidebar.
 final sidebarCollapsedProvider = StateProvider<bool>((ref) => false);
+
+/// Per-vault config (`.purplebrain/config.json`). Reloaded whenever the
+/// vault path changes.
+final vaultConfigProvider =
+    NotifierProvider<VaultConfigNotifier, VaultConfig>(
+  VaultConfigNotifier.new,
+);
+
+class VaultConfigNotifier extends Notifier<VaultConfig> {
+  @override
+  VaultConfig build() {
+    final path = ref.watch(vaultPathProvider);
+    return path == null ? VaultConfig.defaultConfig : VaultConfig.load(path);
+  }
+
+  Future<void> update(VaultConfig config) async {
+    state = config;
+    final path = ref.read(vaultPathProvider);
+    if (path != null) await config.save(path);
+  }
+}
+
+/// Focus targets for the Cmd+0 / Cmd+1 pane-focus shortcuts.
+final sidebarFocusProvider = Provider<FocusNode>((ref) => FocusNode());
+final editorFocusProvider = Provider<FocusNode>((ref) => FocusNode());

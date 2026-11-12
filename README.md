@@ -24,7 +24,9 @@ brain makes a `yyyymmdd/` folder containing
 ## Writing notes
 
 - Toggle **edit / preview** with the pencil icon or `Ctrl/Cmd+E`.
-- The editor is raw Markdown with highlighting; everything autosaves.
+- The editor is raw Markdown with highlighting; it autosaves every few
+  hundred milliseconds — tune the interval in Settings (it's saved
+  per-vault in `.purplebrain/config.json`).
 - Supported in preview: headings, `> [!info]`/`[!warning]`/`[!note]`
   callouts, checkboxes (clickable — ticking one rewrites the file), tables,
   code blocks, YAML frontmatter cards, images and videos.
@@ -62,13 +64,19 @@ folder you choose and opens it as your vault. `.zip` backups still work.
 
 | Keys | Action |
 |---|---|
-| `Ctrl/Cmd+K` | Quick open |
+| `Ctrl/Cmd+P` (or `K`) | Quick open — find files |
 | `Ctrl/Cmd+N` | New note |
-| `Ctrl/Cmd+Shift+N` | Today's daily log |
+| `Ctrl/Cmd+Shift+N` | New folder |
+| `Ctrl/Cmd+Shift+D` | Today's daily log |
 | `Ctrl/Cmd+E` | Toggle edit / preview |
-| `Ctrl/Cmd+S` | Save now (autosave does this anyway) |
+| `Ctrl/Cmd+0` | Focus the sidebar |
+| `Ctrl/Cmd+1` | Focus the editor |
 | `Ctrl/Cmd+B` | Collapse / expand the sidebar |
 | `Ctrl/Cmd+,` | Settings |
+
+There's no save shortcut — notes autosave constantly.
+On macOS the menu bar only shows the app and File menus; everything else
+is keyboard-driven.
 
 All data stays local on your device. Export a `.purplebrain` whenever you
 want a copy elsewhere.

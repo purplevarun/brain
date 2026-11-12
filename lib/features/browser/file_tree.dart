@@ -48,20 +48,96 @@ class FileTree extends ConsumerWidget {
             ),
           );
         }
+        final dailyDir = RegExp(r'^\d{8}$');
+        final daily = [
+          for (final n in root.children)
+            if (n.isDir && dailyDir.hasMatch(n.name)) n,
+        ];
+        final notes = [
+          for (final n in root.children)
+            if (!(n.isDir && dailyDir.hasMatch(n.name))) n,
+        ];
+        Widget row(VaultNode n) => _TreeRow(
+          node: n,
+          depth: 0,
+          openPath: openPath,
+          theme: theme,
+          onOpenFile: onOpenFile,
+        );
         return ListView(
           padding: const EdgeInsets.symmetric(vertical: 4),
           children: [
-            for (final node in root.children)
-              _TreeRow(
-                node: node,
-                depth: 0,
-                openPath: openPath,
-                theme: theme,
-                onOpenFile: onOpenFile,
-              ),
+            if (daily.isNotEmpty)
+              _Section(title: 'Daily logs', children: [for (final n in daily) row(n)]),
+            if (notes.isEmpty && daily.isNotEmpty)
+              _Section(
+                title: 'Notes',
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 2, 8, 6),
+                    child: Text(
+                      'No notes yet.',
+                      style: TextStyle(color: theme.textDim, fontSize: 11.5),
+                    ),
+                  ),
+                ],
+              )
+            else
+              _Section(title: 'Notes', children: [for (final n in notes) row(n)]),
           ],
         );
       },
+    );
+  }
+}
+
+/// Collapsible sidebar section header ("Daily logs" / "Notes").
+class _Section extends ConsumerStatefulWidget {
+  const _Section({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  ConsumerState<_Section> createState() => _SectionState();
+}
+
+class _SectionState extends ConsumerState<_Section> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ref.watch(brainThemeProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 8, 3),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_more : Icons.chevron_right,
+                  size: 13,
+                  color: theme.textDim,
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  widget.title.toUpperCase(),
+                  style: TextStyle(
+                    color: theme.textDim,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded) ...widget.children,
+      ],
     );
   }
 }
