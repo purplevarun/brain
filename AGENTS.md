@@ -42,6 +42,17 @@ stock video controls) will throw "No Material widget found" inside this app.
 - `desktop_drop` applies KGP — Gradle prints a deprecation warning; harmless
   until Flutter requires built-in Kotlin.
 
+## Agent skills
+
+`.devin/skills/` vendors a curated subset of
+[mattpocock/skills](https://github.com/mattpocock/skills) (MIT): `tdd`,
+`diagnosing-bugs`, `code-review`, `research`, `wayfinder`, `prototype`,
+`writing-for-agents` (model-invoked) plus `implement`, `implement-spec`,
+`to-spec`, `to-tickets`, `triage`, `pr`, `handoff` (user-invoked only —
+call them explicitly by name). Prefer `tdd` for fixes/features and
+`diagnosing-bugs` for hard bugs; keep the vendored copies verbatim, fixes
+go upstream or into project skills of our own.
+
 ## State/providers
 
 Riverpod 3.x (`StateProvider` removed — plain providers in
