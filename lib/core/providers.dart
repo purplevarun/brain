@@ -78,9 +78,6 @@ final editModeProvider = StateProvider<bool>((ref) => false);
 /// Unsaved-changes indicator for the open note.
 final noteDirtyProvider = StateProvider<bool>((ref) => false);
 
-/// Sidebar tab: 0 files, 1 search, 2 tags.
-final sidebarTabProvider = StateProvider<int>((ref) => 0);
-
 /// Lets app-level actions (shortcuts, menus) invoke editor ops.
 final editorActionsProvider = StateProvider<EditorActions?>((ref) => null);
 

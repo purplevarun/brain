@@ -8,135 +8,63 @@ import '../../core/platform_utils.dart';
 import '../../core/providers.dart';
 import 'note_actions.dart';
 
-/// Recursive vault file tree — dirs first, sorted by name (yyyymmdd_
-/// prefixes sort chronologically, matching the work-log convention).
-class FileTree extends ConsumerWidget {
-  const FileTree({super.key, this.onOpenFile});
+final _dailyDirRe = RegExp(r'^\d{8}$');
 
+/// True for top-level day folders named yyyymmdd (the work-log convention).
+bool isDailyDir(VaultNode n) => n.isDir && _dailyDirRe.hasMatch(n.name);
+
+/// Splits root children into (daily-log dirs, everything else).
+(List<VaultNode>, List<VaultNode>) splitDailyNotes(VaultNode root) {
+  final daily = <VaultNode>[];
+  final notes = <VaultNode>[];
+  for (final n in root.children) {
+    (isDailyDir(n) ? daily : notes).add(n);
+  }
+  return (daily, notes);
+}
+
+/// Scrollable list of tree nodes for one sidebar section (Daily notes /
+/// Notes). Row expand/collapse lives inside [_TreeRow].
+class TreeNodes extends ConsumerWidget {
+  const TreeNodes({
+    super.key,
+    required this.nodes,
+    this.emptyHint = 'No notes yet.',
+    this.onOpenFile,
+  });
+
+  final List<VaultNode> nodes;
+  final String emptyHint;
   final VoidCallback? onOpenFile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(brainThemeProvider);
-    final tree = ref.watch(treeProvider);
     final openPath = ref.watch(openPathProvider);
 
-    return tree.when(
-      loading: () => const Center(
+    if (nodes.isEmpty) {
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Text(
-            'Cannot read vault:\n$e',
+            emptyHint,
             textAlign: TextAlign.center,
-            style: TextStyle(color: theme.textDim, fontSize: 12),
+            style: TextStyle(color: theme.textDim, fontSize: 11.5),
           ),
         ),
-      ),
-      data: (root) {
-        if (root == null || root.children.isEmpty) {
-          return Center(
-            child: Text(
-              'Empty vault — create a note\nto get started.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.textDim, fontSize: 12.5),
-            ),
-          );
-        }
-        final dailyDir = RegExp(r'^\d{8}$');
-        final daily = [
-          for (final n in root.children)
-            if (n.isDir && dailyDir.hasMatch(n.name)) n,
-        ];
-        final notes = [
-          for (final n in root.children)
-            if (!(n.isDir && dailyDir.hasMatch(n.name))) n,
-        ];
-        Widget row(VaultNode n) => _TreeRow(
-          node: n,
-          depth: 0,
-          openPath: openPath,
-          theme: theme,
-          onOpenFile: onOpenFile,
-        );
-        return ListView(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          children: [
-            if (daily.isNotEmpty)
-              _Section(title: 'Daily logs', children: [for (final n in daily) row(n)]),
-            if (notes.isEmpty && daily.isNotEmpty)
-              _Section(
-                title: 'Notes',
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 2, 8, 6),
-                    child: Text(
-                      'No notes yet.',
-                      style: TextStyle(color: theme.textDim, fontSize: 11.5),
-                    ),
-                  ),
-                ],
-              )
-            else
-              _Section(title: 'Notes', children: [for (final n in notes) row(n)]),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Collapsible sidebar section header ("Daily logs" / "Notes").
-class _Section extends ConsumerStatefulWidget {
-  const _Section({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  ConsumerState<_Section> createState() => _SectionState();
-}
-
-class _SectionState extends ConsumerState<_Section> {
-  bool _expanded = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = ref.watch(brainThemeProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       children: [
-        InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 8, 3),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.expand_more : Icons.chevron_right,
-                  size: 13,
-                  color: theme.textDim,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  widget.title.toUpperCase(),
-                  style: TextStyle(
-                    color: theme.textDim,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ],
-            ),
+        for (final n in nodes)
+          _TreeRow(
+            node: n,
+            depth: 0,
+            openPath: openPath,
+            theme: theme,
+            onOpenFile: onOpenFile,
           ),
-        ),
-        if (_expanded) ...widget.children,
       ],
     );
   }

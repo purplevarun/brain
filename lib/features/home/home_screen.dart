@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/brain_mark.dart';
 import '../../app/theme/theme_controller.dart';
+import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/vault_config.dart';
 import '../browser/file_tree.dart';
@@ -210,7 +211,6 @@ class VaultSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(brainThemeProvider);
-    final tab = ref.watch(sidebarTabProvider);
     final vaultPath = ref.watch(vaultPathProvider) ?? '';
     final vaultName = vaultPath.split('/').where((s) => s.isNotEmpty).lastOrNull ?? 'vault';
 
@@ -267,75 +267,152 @@ class VaultSidebar extends ConsumerWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                children: [
-                  for (final (i, (icon, label)) in [
-                    (Icons.folder_outlined, 'Files'),
-                    (Icons.search, 'Search'),
-                    (Icons.sell_outlined, 'Tags'),
-                  ].indexed)
-                    Expanded(
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(6),
-                        onTap: () =>
-                            ref.read(sidebarTabProvider.notifier).state = i,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: tab == i
-                                    ? theme.accent
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                icon,
-                                size: 14,
-                                color: tab == i ? theme.accent : theme.textDim,
-                              ),
-                              const SizedBox(width: 5),
-                              Flexible(
-                                child: Text(
-                                  label,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color:
-                                        tab == i ? theme.accent : theme.textDim,
-                                    fontWeight: tab == i
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
             Divider(height: 1, color: theme.border),
             Expanded(
               child: Focus(
                 focusNode: ref.watch(sidebarFocusProvider),
-                child: switch (tab) {
-                  1 => SearchPanel(onOpenFile: closeDrawerIfAny),
-                  2 => TagPanel(onOpenFile: closeDrawerIfAny),
-                  _ => FileTree(onOpenFile: closeDrawerIfAny),
-                },
+                child: _SidebarSections(onOpenFile: closeDrawerIfAny),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// VS Code-style sidebar body: vertically stacked collapsible sections.
+/// Daily Notes and Notes are expanded by default and split the space;
+/// Search and Tags are collapsed headers that open on click ("stay down").
+class _SidebarSections extends ConsumerStatefulWidget {
+  const _SidebarSections({required this.onOpenFile});
+
+  final VoidCallback onOpenFile;
+
+  @override
+  ConsumerState<_SidebarSections> createState() => _SidebarSectionsState();
+}
+
+class _SidebarSectionsState extends ConsumerState<_SidebarSections> {
+  final _open = <String>{'daily', 'notes'};
+
+  void _toggle(String key) => setState(
+      () => _open.contains(key) ? _open.remove(key) : _open.add(key));
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ref.watch(brainThemeProvider);
+    final tree = ref.watch(treeProvider);
+    final (daily, notes) = switch (tree) {
+      AsyncData(:final value) when value != null => splitDailyNotes(value),
+      _ => (const <VaultNode>[], const <VaultNode>[]),
+    };
+
+    Widget fileBody(List<VaultNode> nodes, String hint) {
+      if (tree.isLoading) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      }
+      if (tree.hasError) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              'Cannot read vault.',
+              style: TextStyle(color: theme.textDim, fontSize: 11.5),
+            ),
+          ),
+        );
+      }
+      return TreeNodes(
+        nodes: nodes,
+        emptyHint: hint,
+        onOpenFile: widget.onOpenFile,
+      );
+    }
+
+    return Column(
+      children: [
+        _section(
+          'daily',
+          'Daily Notes',
+          fileBody(
+            daily,
+            'No daily logs yet —\nCtrl/Cmd+Shift+D creates today\'s.',
+          ),
+        ),
+        _section(
+          'notes',
+          'Notes',
+          fileBody(notes, 'No notes yet —\nCtrl/Cmd+N creates one.'),
+        ),
+        _section('search', 'Search',
+            SearchPanel(onOpenFile: widget.onOpenFile)),
+        _section('tags', 'Tags', TagPanel(onOpenFile: widget.onOpenFile)),
+      ],
+    );
+  }
+
+  Widget _section(String key, String title, Widget child) {
+    final open = _open.contains(key);
+    final header =
+        _SectionHeader(title: title, open: open, onToggle: () => _toggle(key));
+    if (!open) return header;
+    return Expanded(
+      child: Column(children: [header, Expanded(child: child)]),
+    );
+  }
+}
+
+/// Tappable collapsible section header — chevron + uppercase label + rule.
+class _SectionHeader extends ConsumerWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.open,
+    required this.onToggle,
+  });
+
+  final String title;
+  final bool open;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(brainThemeProvider);
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: theme.border)),
+      ),
+      child: InkWell(
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 7, 8, 7),
+          child: Row(
+            children: [
+              Icon(
+                open ? Icons.expand_more : Icons.chevron_right,
+                size: 14,
+                color: theme.textDim,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.textDim,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
