@@ -172,9 +172,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
             editMode: editMode,
             theme: theme,
             onAttach: attachFiles,
-            onToggleMode: () => ref
-                .read(editModeProvider.notifier)
-                .state = !ref.read(editModeProvider),
+            onSetMode: (edit) =>
+                ref.read(editModeProvider.notifier).state = edit,
           ),
           Expanded(
             child: editMode
@@ -373,7 +372,7 @@ class _EditorHeader extends StatelessWidget {
     required this.editMode,
     required this.theme,
     required this.onAttach,
-    required this.onToggleMode,
+    required this.onSetMode,
   });
 
   final String relPath;
@@ -381,7 +380,7 @@ class _EditorHeader extends StatelessWidget {
   final bool editMode;
   final BrainTheme theme;
   final VoidCallback onAttach;
-  final VoidCallback onToggleMode;
+  final ValueChanged<bool> onSetMode;
 
   @override
   Widget build(BuildContext context) {
@@ -408,12 +407,8 @@ class _EditorHeader extends StatelessWidget {
               padding: const EdgeInsets.only(right: 6),
               child: Icon(Icons.circle, size: 8, color: theme.orange),
             ),
-          _HeaderIcon(
-            icon: editMode ? Icons.visibility_outlined : Icons.edit_outlined,
-            tooltip: editMode ? 'Preview (Ctrl/Cmd+E)' : 'Edit (Ctrl/Cmd+E)',
-            onTap: onToggleMode,
-            theme: theme,
-          ),
+          _ModeToggle(editMode: editMode, theme: theme, onSet: onSetMode),
+          const SizedBox(width: 8),
           _HeaderIcon(
             icon: Icons.attach_file,
             tooltip: 'Attach file',
@@ -421,6 +416,67 @@ class _EditorHeader extends StatelessWidget {
             theme: theme,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Two-segment Edit | Preview pill — the Cmd/Ctrl+E state shown visibly.
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle({
+    required this.editMode,
+    required this.theme,
+    required this.onSet,
+  });
+
+  final bool editMode;
+  final BrainTheme theme;
+  final ValueChanged<bool> onSet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.bg,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: theme.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _seg('Edit', Icons.edit_outlined, editMode, () => onSet(true)),
+          _seg('Preview', Icons.visibility_outlined, !editMode,
+              () => onSet(false)),
+        ],
+      ),
+    );
+  }
+
+  Widget _seg(String label, IconData icon, bool on, VoidCallback tap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: tap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: on ? theme.accent.withValues(alpha: 0.18) : null,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 13,
+                color: on ? theme.accent : theme.textDim),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: on ? theme.accent : theme.textDim,
+                fontWeight: on ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

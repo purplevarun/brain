@@ -36,51 +36,78 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-SingleActivator _key(LogicalKeyboardKey k, {bool shift = false}) {
-  final mac = !kIsWeb && Platform.isMacOS;
-  return SingleActivator(k, meta: mac, control: !mac, shift: shift);
-}
-
-/// Global shortcuts: Cmd/Ctrl+P (or K) quick open, N new note,
-/// Shift+N new folder, Shift+D daily log, E toggle mode, B sidebar,
-/// 0 focus sidebar, 1 focus editor, , settings. Saving is autosave-only.
-class _Shortcuts extends ConsumerWidget {
+/// Global shortcuts, handled at the hardware-keyboard level so they fire
+/// everywhere — including while a TextField or menu has focus:
+/// Cmd/Ctrl+P (or K) quick open, N new note, Shift+N new folder,
+/// Shift+D daily log, E toggle mode, B sidebar, 0 focus sidebar,
+/// 1 focus editor, , settings. Saving is autosave-only.
+class _Shortcuts extends ConsumerStatefulWidget {
   const _Shortcuts({required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return CallbackShortcuts(
-      bindings: {
-        _key(LogicalKeyboardKey.keyP): () => showQuickOpen(context, ref),
-        _key(LogicalKeyboardKey.keyK): () => showQuickOpen(context, ref),
-        _key(LogicalKeyboardKey.keyE): () =>
-            ref.read(editModeProvider.notifier).state =
-                !ref.read(editModeProvider),
-        _key(LogicalKeyboardKey.keyN): () =>
-            NoteActions.newNote(context, ref),
-        _key(LogicalKeyboardKey.keyN, shift: true): () =>
-            NoteActions.newFolder(context, ref),
-        _key(LogicalKeyboardKey.keyD, shift: true): () =>
-            openDailyLog(context, ref),
-        _key(LogicalKeyboardKey.digit0): () {
-          ref.read(sidebarCollapsedProvider.notifier).state = false;
-          ref.read(sidebarFocusProvider).requestFocus();
-        },
-        _key(LogicalKeyboardKey.digit1): () {
-          ref.read(editModeProvider.notifier).state = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref.read(editorFocusProvider).requestFocus();
-          });
-        },
-        _key(LogicalKeyboardKey.keyB): () =>
-            ref.read(sidebarCollapsedProvider.notifier).state =
-                !ref.read(sidebarCollapsedProvider),
-        _key(LogicalKeyboardKey.comma): () => showSettings(context),
-      },
-      child: Focus(autofocus: true, child: child),
-    );
+  ConsumerState<_Shortcuts> createState() => _ShortcutsState();
+}
+
+class _ShortcutsState extends ConsumerState<_Shortcuts> {
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  bool get _modifier {
+    final kb = HardwareKeyboard.instance;
+    final mac = !kIsWeb && Platform.isMacOS;
+    return mac ? kb.isMetaPressed : kb.isControlPressed;
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent || !_modifier || !mounted) return false;
+    final shift = HardwareKeyboard.instance.isShiftPressed;
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.keyP:
+      case LogicalKeyboardKey.keyK:
+        showQuickOpen(context, ref);
+      case LogicalKeyboardKey.keyE:
+        ref.read(editModeProvider.notifier).state =
+            !ref.read(editModeProvider);
+      case LogicalKeyboardKey.keyN:
+        shift
+            ? NoteActions.newFolder(context, ref)
+            : NoteActions.newNote(context, ref);
+      case LogicalKeyboardKey.keyD:
+        if (!shift) return false;
+        openDailyLog(context, ref);
+      case LogicalKeyboardKey.digit0:
+        ref.read(sidebarCollapsedProvider.notifier).state = false;
+        ref.read(sidebarFocusProvider).requestFocus();
+      case LogicalKeyboardKey.digit1:
+        ref.read(editModeProvider.notifier).state = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(editorFocusProvider).requestFocus();
+        });
+      case LogicalKeyboardKey.keyB:
+        ref.read(sidebarCollapsedProvider.notifier).state =
+            !ref.read(sidebarCollapsedProvider);
+      case LogicalKeyboardKey.comma:
+        showSettings(context);
+      default:
+        return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(autofocus: true, child: widget.child);
   }
 }
 
