@@ -1,17 +1,52 @@
 # brain
 
-A new Flutter project.
+A local-first, dark-only work-log app. Flutter single codebase for macOS,
+Windows, Android and iOS. Inspired by Obsidian-style vaults but its own
+thing: chronological daily logs + meeting/KT notes in plain Markdown.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+- **Vaults are plain folders** — pick any directory; notes stay `.md` files
+  you own. Attachments live next to the note that uses them.
+- **`yyyymmdd` day folders** — daily logs (`yyyymmdd_Work_Log.md`) with
+  `previous`/`next` frontmatter links, meetings and KT notes alongside.
+- **Raw-Markdown editor** with inline syntax highlighting, autosave, and a
+  live preview toggle.
+- **Preview**: frontmatter card, `> [!type]` callouts, tappable checkboxes,
+  image/video embeds (media_kit), tables, code blocks.
+- **Standard `[text](path)` Markdown links.** For compatibility with existing
+  Obsidian vaults, `[[wikilinks|alias]]` and `![[embeds]]` are *read* and
+  rendered — brain never writes them.
+- **Search** across all notes (line hits), **quick-open** palette
+  (Ctrl/Cmd+K), **tag index** (frontmatter + `#inline` tags).
+- **6 dark themes**: GitHub Dark (default), Tokyo Night, Dracula, Gruvbox,
+  Catppuccin Mocha, Nord.
+- **Backup**: export/import the whole vault as a `.zip`.
 
-A few resources to get you started if this is your first Flutter project:
+## Shortcuts
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+| Keys | Action |
+|---|---|
+| Ctrl/Cmd+K | Quick open |
+| Ctrl/Cmd+N | New note |
+| Ctrl/Cmd+Shift+N | Daily log |
+| Ctrl/Cmd+E | Edit / preview |
+| Ctrl/Cmd+S | Save |
+| Ctrl/Cmd+B | Sidebar |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Develop
+
+```sh
+flutter pub get
+flutter analyze
+flutter test
+flutter run          # pick a device
+```
+
+See `AGENTS.md` for toolchain notes (material_ui, CI matrix, Xcode).
+
+## CI
+
+`.github/workflows/build.yml` builds Android APK, macOS `.app`, iOS
+(`--no-codesign`) and Windows on every push, plus `analyze` + `test`.
+Artifacts are attached to each run.
