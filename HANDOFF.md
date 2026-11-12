@@ -53,6 +53,21 @@ logs). brain reads that layout; it only *writes* standard markdown links.
   in AppDelegate.
 - Next step when this lands: user installs the new `brain_<date>.dmg` and
   verifies the three vault buttons + export/import on the real app.
+- Second batch (user request): global `HardwareKeyboard` shortcuts (fire
+  even with a TextField focused) + Cmd+E two-segment Edit/Preview pill;
+  text zoom Cmd+= / Cmd+- / Cmd+Shift+0 (textScaler on editor+preview,
+  persisted in config `zoom`); Tab/Shift+Tab line indent in editor
+  (`lib/features/editor/indent.dart`, pure + unit-tested); sidebar is now
+  VS Code-style stacked collapsible sections — Daily Notes + Notes
+  expanded on top, Search + Tags collapsed headers below (tab row and
+  `sidebarTabProvider` deleted; `FileTree` → `TreeNodes` +
+  `splitDailyNotes`).
+- **Release publishing broke mid-session**: `GITHUB_TOKEN` 403s on
+  `gh release create` despite `Contents: write` (worked through _4, user's
+  PAT works). _5/_6 were published manually from CI artifacts. Publish
+  step now prefers `secrets.RELEASE_TOKEN` (a contents:write PAT) if the
+  user adds it, and re-resolves a free tag at publish time (two concurrent
+  runs computed the same `_N` suffix).
 
 ## Environment realities
 
@@ -89,6 +104,9 @@ logs). brain reads that layout; it only *writes* standard markdown links.
 ## Open threads
 
 - Verify the new dmg on the real Mac (buttons, export, import).
+- Watch whether the `GITHUB_TOKEN` release-create 403 heals; if not, add a
+  `RELEASE_TOKEN` (contents:write) repo secret — the publish step already
+  prefers it.
 - iOS build is CI-verified only (`--no-codesign`); real device install still
   needs an Apple ID/Xcode.
 - Windows build is CI-verified; no local Windows machine to try it.
