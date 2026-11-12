@@ -50,3 +50,10 @@ See `AGENTS.md` for toolchain notes (material_ui, CI matrix, Xcode).
 `.github/workflows/build.yml` builds Android APK, macOS `.app`, iOS
 (`--no-codesign`) and Windows on every push, plus `analyze` + `test`.
 Artifacts are attached to each run.
+
+## Releases
+
+`.github/workflows/release.yml` publishes date-versioned releases:
+`brain_<yyyymmdd>.apk`, `.dmg`, `_windows.zip`, `_ios_unsigned.zip`
+(same-day reruns get `_2`, `_3`, ...). Trigger it from the Actions tab
+or by pushing a `brain_<yyyymmdd>` tag.

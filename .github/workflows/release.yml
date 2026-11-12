@@ -1,0 +1,144 @@
+name: release
+
+# Date-wise versioning: every release asset is brain_<yyyymmdd>.<ext>.
+# A second release on the same day gets brain_<yyyymmdd>_2, then _3, ...
+# Trigger: Actions tab -> "release" -> Run workflow, or push a brain_* tag.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["brain_*"]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      ver: ${{ steps.v.outputs.ver }}
+    steps:
+      - id: v
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/brain_* ]]; then
+            VER="${GITHUB_REF#refs/tags/brain_}"
+          else
+            VER=$(date -u +%Y%m%d)
+          fi
+          TAG="brain_${VER}"; n=2
+          while gh api "repos/${{ github.repository }}/releases/tags/${TAG}" --silent 2>/dev/null; do
+            TAG="brain_${VER}_${n}"; n=$((n+1))
+          done
+          echo "ver=${TAG#brain_}" >> "$GITHUB_OUTPUT"
+
+  apk:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VER: ${{ needs.version.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk "brain_${VER}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: "brain_${{ env.VER }}.apk"
+
+  macos:
+    needs: version
+    runs-on: macos-latest
+    env:
+      VER: ${{ needs.version.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build macos --release
+      - name: Package dmg
+        run: |
+          APP="build/macos/Build/Products/Release/brain.app"
+          hdiutil create -volname brain -srcfolder "$APP" -ov -format UDZO "brain_${VER}.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: "brain_${{ env.VER }}.dmg"
+
+  ios:
+    needs: version
+    runs-on: macos-latest
+    env:
+      VER: ${{ needs.version.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign
+      - name: Package unsigned app
+        run: ditto -c -k --sequesterRsrc --keepParent "build/ios/iphoneos/Runner.app" "brain_${VER}_ios_unsigned.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: "brain_${{ env.VER }}_ios_unsigned.zip"
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+    env:
+      VER: ${{ needs.version.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Package zip
+        shell: pwsh
+        run: Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "brain_${{ env.VER }}_windows.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: "brain_${{ env.VER }}_windows.zip"
+
+  publish:
+    needs: [version, apk, macos, ios, windows]
+    runs-on: ubuntu-latest
+    env:
+      VER: ${{ needs.version.outputs.ver }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist
+      - name: Create GitHub release
+        run: |
+          cat > notes.md <<EOF
+          brain ${VER}
+
+          | Platform | Asset |
+          |---|---|
+          | Android | brain_${VER}.apk |
+          | macOS | brain_${VER}.dmg |
+          | iOS | brain_${VER}_ios_unsigned.zip (unsigned, needs re-signing to install) |
+          | Windows | brain_${VER}_windows.zip |
+
+          macOS: unsigned build. After installing, run
+          \`xattr -dr com.apple.quarantine /Applications/brain.app\` once.
+          EOF
+          gh release create "brain_${VER}" dist/* --title "brain ${VER}" --notes-file notes.md

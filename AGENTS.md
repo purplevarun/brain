@@ -53,6 +53,14 @@ call them explicitly by name). Prefer `tdd` for fixes/features and
 `diagnosing-bugs` for hard bugs; keep the vendored copies verbatim, fixes
 go upstream or into project skills of our own.
 
+## Versioning
+
+Releases are **date-versioned**: assets are `brain_<yyyymmdd>.<ext>`
+(`brain_20261112.apk`, `brain_20261112.dmg`, ...). A second same-day
+release appends `_2`, `_3`, ... Cut releases via the `release` workflow
+(Actions tab, or `git tag brain_<yyyymmdd> && git push --tags`). The
+nightly-style `build` workflow keeps short artifact names on purpose.
+
 ## State/providers
 
 Riverpod 3.x (`StateProvider` removed — plain providers in
