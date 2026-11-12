@@ -57,7 +57,7 @@ jobs:
 
   macos:
     needs: version
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       VER: ${{ needs.version.outputs.ver }}
     steps:
@@ -78,7 +78,7 @@ jobs:
 
   ios:
     needs: version
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       VER: ${{ needs.version.outputs.ver }}
     steps:
