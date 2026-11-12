@@ -234,15 +234,18 @@ class VaultSidebar extends ConsumerWidget {
                                 color: tab == i ? theme.accent : theme.textDim,
                               ),
                               const SizedBox(width: 5),
-                              Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color:
-                                      tab == i ? theme.accent : theme.textDim,
-                                  fontWeight: tab == i
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
+                              Flexible(
+                                child: Text(
+                                  label,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color:
+                                        tab == i ? theme.accent : theme.textDim,
+                                    fontWeight: tab == i
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
                                 ),
                               ),
                             ],

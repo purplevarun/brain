@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "1.19.1"
   cross_file:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: cross_file
       sha256: f141ea4f277af142a0356955707f6556f37b03947d39d55585981a06ca437bd6
@@ -186,7 +186,7 @@ packages:
     source: hosted
     version: "2.0.4"
   file_picker_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: file_picker_platform_interface
       sha256: "336e7168306834a2b68e6168ed768e00d3fabeac23154d5793e277ca9f97cf20"

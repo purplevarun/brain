@@ -1,11 +1,17 @@
 # AGENTS.md — brain dev notes
 
+**Read `HANDOFF.md` first** for project priorities, session history and
+hard-won test/platform gotchas — it's the canonical handoff doc. This file
+holds the conventions; HANDOFF holds the story.
+
 ## Commands
 
 - `flutter pub get` / `flutter analyze` / `flutter test` — all must stay clean.
 - `flutter run -d <device>` — Android emulator `Local_AVD` works locally.
-- Unit tests: `test/brain_test.dart` (parsing, naming, search, themes — no
-  widget tests; the app needs a real device/emulator to exercise UI).
+- Unit tests `test/brain_test.dart` + widget e2e
+  `test/e2e_vault_flows_test.dart` (fakes `FilePickerPlatform.instance`).
+  Vault-opened widget tests must use `runAsync` + bounded pumps, never
+  `pumpAndSettle` — see HANDOFF for why.
 
 ## material_ui vs legacy material (important)
 
@@ -31,8 +37,14 @@ stock video controls) will throw "No Material widget found" inside this app.
 
 ## Platform notes
 
+- **`files.user-selected.read-write` entitlement is REQUIRED** in both macOS
+  entitlements files even though the sandbox is off — `file_picker_darwin`
+  2.5.x refuses every dialog without it (silent PlatformException = dead
+  buttons). This was the "all three buttons do nothing" bug.
 - **macOS sandbox is disabled** (Runner entitlements) so a user-picked vault
   stays readable across restarts without security-scoped bookmarks.
+- Backups are `.purplebrain` files = a plain zip of the vault (not a
+  database). Import also accepts legacy `.zip`.
 - **No Xcode on the dev Mac** (no Apple ID) — iOS/macOS builds verified via
   CI `macos-latest` job instead. `xcodes install --latest` works if an Apple
   ID ever becomes available.

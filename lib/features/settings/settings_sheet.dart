@@ -24,7 +24,7 @@ class _SettingsSheet extends ConsumerWidget {
     final vaultPath = ref.watch(vaultPathProvider);
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -75,7 +75,7 @@ class _SettingsSheet extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () async {
                     Navigator.pop(context);
-                    await exportVaultZip(context, ref);
+                    await exportVaultBackup(context, ref);
                   },
                   icon: const Icon(Icons.archive_outlined, size: 16),
                   label: const Text('Export backup'),
@@ -83,7 +83,7 @@ class _SettingsSheet extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () async {
                     Navigator.pop(context);
-                    await importVaultZip(context, ref);
+                    await importVaultBackup(context, ref);
                   },
                   icon: const Icon(Icons.unarchive_outlined, size: 16),
                   label: const Text('Import backup'),

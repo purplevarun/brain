@@ -141,4 +141,6 @@ jobs:
           macOS: unsigned build. After installing, run
           \`xattr -dr com.apple.quarantine /Applications/brain.app\` once.
           EOF
-          gh release create "brain_${VER}" dist/* --title "brain ${VER}" --notes-file notes.md
+          gh release create "brain_${VER}" dist/* \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" \
+            --title "brain ${VER}" --notes-file notes.md

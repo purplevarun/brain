@@ -76,8 +76,8 @@ class VaultPicker extends ConsumerWidget {
               _VaultButton(
                 theme: theme,
                 icon: Icons.unarchive_outlined,
-                label: 'Import vault backup (.zip)',
-                onTap: () => importVaultZip(context, ref),
+                label: 'Import vault backup (.purplebrain)',
+                onTap: () => importVaultBackup(context, ref),
               ),
             ],
           ),
@@ -87,25 +87,37 @@ class VaultPicker extends ConsumerWidget {
   }
 
   Future<void> _pickFolder(BuildContext context, WidgetRef ref) async {
-    final path = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Choose your vault folder',
-    );
-    if (path != null) {
-      await ref.read(vaultPathProvider.notifier).set(path);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final path = await FilePicker.getDirectoryPath(
+        dialogTitle: 'Choose your vault folder',
+      );
+      if (path != null) {
+        await ref.read(vaultPathProvider.notifier).set(path);
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Could not open folder: $e')));
     }
   }
 
   Future<void> _createVault(BuildContext context, WidgetRef ref) async {
-    final parent = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Choose where to create the vault',
-    );
-    if (parent == null || !context.mounted) return;
-    final dir = Directory(p.join(parent, 'brain_vault'));
-    await dir.create(recursive: true);
-    await File(p.join(dir.path, 'README.md')).writeAsString(
-      '# brain vault\n\nYour notes live here as plain markdown files.\n',
-    );
-    await ref.read(vaultPathProvider.notifier).set(dir.path);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final parent = await FilePicker.getDirectoryPath(
+        dialogTitle: 'Choose where to create the vault',
+      );
+      if (parent == null || !context.mounted) return;
+      final dir = Directory(p.join(parent, 'brain_vault'));
+      await dir.create(recursive: true);
+      await File(p.join(dir.path, 'README.md')).writeAsString(
+        '# brain vault\n\nYour notes live here as plain markdown files.\n',
+      );
+      await ref.read(vaultPathProvider.notifier).set(dir.path);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not create vault: $e')),
+      );
+    }
   }
 
   Future<void> _localVault(WidgetRef ref) async {
