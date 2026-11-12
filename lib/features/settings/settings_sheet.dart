@@ -88,6 +88,12 @@ class _SettingsSheet extends ConsumerWidget {
               ],
             ),
             Text(
+              'Zoom ${(config.zoom * 100).round()}% '
+              '(Ctrl/Cmd+= / Ctrl/Cmd+-, Ctrl/Cmd+Shift+0 resets)',
+              style: TextStyle(color: theme.text, fontSize: 12.5),
+            ),
+            const SizedBox(height: 4),
+            Text(
               'Saved to .purplebrain/config.json in this vault.',
               style: TextStyle(color: theme.textDim, fontSize: 11),
             ),
@@ -191,6 +197,9 @@ const _shortcuts = [
   ('Ctrl/Cmd+0', 'Focus sidebar'),
   ('Ctrl/Cmd+1', 'Focus editor'),
   ('Ctrl/Cmd+B', 'Collapse / expand sidebar'),
+  ('Ctrl/Cmd+=  ·  -', 'Zoom in / out'),
+  ('Ctrl/Cmd+Shift+0', 'Reset zoom'),
+  ('Tab  /  Shift+Tab', 'Indent / dedent lines in editor'),
   ('Ctrl/Cmd+,', 'Settings'),
 ];
 

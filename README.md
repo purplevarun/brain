@@ -72,6 +72,9 @@ folder you choose and opens it as your vault. `.zip` backups still work.
 | `Ctrl/Cmd+0` | Focus the sidebar |
 | `Ctrl/Cmd+1` | Focus the editor |
 | `Ctrl/Cmd+B` | Collapse / expand the sidebar |
+| `Ctrl/Cmd+=` / `Ctrl/Cmd+-` | Zoom text in / out |
+| `Ctrl/Cmd+Shift+0` | Reset zoom |
+| `Tab` / `Shift+Tab` | Indent / dedent lines in the editor |
 | `Ctrl/Cmd+,` | Settings |
 
 There's no save shortcut — notes autosave constantly.

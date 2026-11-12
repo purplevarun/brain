@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../app/brain_mark.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../core/providers.dart';
+import '../../core/vault_config.dart';
 import '../browser/file_tree.dart';
 import '../browser/note_actions.dart';
 import '../editor/editor_screen.dart';
@@ -40,7 +41,8 @@ class HomeScreen extends ConsumerWidget {
 /// everywhere — including while a TextField or menu has focus:
 /// Cmd/Ctrl+P (or K) quick open, N new note, Shift+N new folder,
 /// Shift+D daily log, E toggle mode, B sidebar, 0 focus sidebar,
-/// 1 focus editor, , settings. Saving is autosave-only.
+/// Shift+0 reset zoom, 1 focus editor, =/+ zoom in, - zoom out,
+/// , settings. Saving is autosave-only.
 class _Shortcuts extends ConsumerStatefulWidget {
   const _Shortcuts({required this.child});
 
@@ -87,8 +89,20 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
         if (!shift) return false;
         openDailyLog(context, ref);
       case LogicalKeyboardKey.digit0:
-        ref.read(sidebarCollapsedProvider.notifier).state = false;
-        ref.read(sidebarFocusProvider).requestFocus();
+      case LogicalKeyboardKey.numpad0:
+        if (shift) {
+          _setZoom(1.0);
+        } else {
+          ref.read(sidebarCollapsedProvider.notifier).state = false;
+          ref.read(sidebarFocusProvider).requestFocus();
+        }
+      case LogicalKeyboardKey.equal:
+      case LogicalKeyboardKey.add:
+      case LogicalKeyboardKey.numpadAdd:
+        _bumpZoom(1);
+      case LogicalKeyboardKey.minus:
+      case LogicalKeyboardKey.numpadSubtract:
+        _bumpZoom(-1);
       case LogicalKeyboardKey.digit1:
         ref.read(editModeProvider.notifier).state = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -103,6 +117,20 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
         return false;
     }
     return true;
+  }
+
+  void _bumpZoom(int dir) {
+    final cfg = ref.read(vaultConfigProvider);
+    // Round to one decimal so repeated presses don't drift (0.1-step ladder).
+    final next = ((cfg.zoom + dir * VaultConfig.zoomStep) * 10).round() / 10;
+    _setZoom(next);
+  }
+
+  void _setZoom(double zoom) {
+    final cfg = ref.read(vaultConfigProvider);
+    ref
+        .read(vaultConfigProvider.notifier)
+        .update(cfg.copyWith(zoom: zoom.clamp(VaultConfig.minZoom, VaultConfig.maxZoom)));
   }
 
   @override

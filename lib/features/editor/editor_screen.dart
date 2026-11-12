@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -12,6 +13,7 @@ import '../../core/brain_markdown.dart';
 import '../../core/platform_utils.dart';
 import '../../core/providers.dart';
 import '../preview/note_preview.dart';
+import 'indent.dart';
 
 final _checkboxRe = RegExp(r'^\s*[-*+] \[( |x|X)\]', multiLine: true);
 
@@ -176,13 +178,20 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                 ref.read(editModeProvider.notifier).state = edit,
           ),
           Expanded(
-            child: editMode
-                ? _buildEditor(theme)
-                : NotePreview(
-                    relPath: openPath,
-                    raw: _controller.text,
-                    onToggleCheckbox: toggleCheckbox,
-                  ),
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(
+                  ref.watch(vaultConfigProvider).zoom,
+                ),
+              ),
+              child: editMode
+                  ? _buildEditor(theme)
+                  : NotePreview(
+                      relPath: openPath,
+                      raw: _controller.text,
+                      onToggleCheckbox: toggleCheckbox,
+                    ),
+            ),
           ),
           if (_dragging)
             Container(
@@ -203,25 +212,39 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
   Widget _buildEditor(BrainTheme theme) {
     return Container(
       color: theme.bg,
-      child: TextField(
-        controller: _controller,
-        focusNode: ref.read(editorFocusProvider),
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        keyboardType: TextInputType.multiline,
-        cursorColor: theme.accent,
-        smartQuotesType: SmartQuotesType.disabled,
-        textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 13.5,
-          height: 1.5,
-          color: theme.text,
-        ),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Focus(
+        // Catch Tab before focus-traversal sees it: indent / dedent instead.
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.tab) {
+            _controller.value = indentSelection(
+              _controller.value,
+              dedent: HardwareKeyboard.instance.isShiftPressed,
+            );
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: _controller,
+          focusNode: ref.read(editorFocusProvider),
+          expands: true,
+          maxLines: null,
+          minLines: null,
+          keyboardType: TextInputType.multiline,
+          cursorColor: theme.accent,
+          smartQuotesType: SmartQuotesType.disabled,
+          textAlignVertical: TextAlignVertical.top,
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 13.5,
+            height: 1.5,
+            color: theme.text,
+          ),
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          ),
         ),
       ),
     );
