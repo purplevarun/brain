@@ -38,6 +38,10 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+/// Scaffold key for the narrow layout — lets Cmd+0 open the sidebar drawer
+/// even though _Shortcuts sits above the Scaffold.
+final _narrowScaffoldKey = GlobalKey<ScaffoldState>();
+
 /// Global shortcuts, handled at the hardware-keyboard level so they fire
 /// everywhere — including while a TextField or menu has focus:
 /// Cmd/Ctrl+P (or K) quick open, N new note, Shift+N new folder,
@@ -93,8 +97,7 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
         if (shift) {
           _setZoom(1.0);
         } else {
-          ref.read(sidebarCollapsedProvider.notifier).state = false;
-          ref.read(sidebarFocusProvider).requestFocus();
+          _focusSidebar();
         }
       case LogicalKeyboardKey.equal:
       case LogicalKeyboardKey.add:
@@ -106,7 +109,15 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
       case LogicalKeyboardKey.digit1:
         ref.read(editModeProvider.notifier).state = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(editorFocusProvider).requestFocus();
+          if (!mounted) return;
+          final node = ref.read(editorFocusProvider);
+          if (node.context != null) {
+            node.requestFocus();
+          } else if (ref.read(openPathProvider) == null) {
+            // No editor surface exists without an open note — help the
+            // user get to one instead of silently doing nothing.
+            showQuickOpen(context, ref);
+          }
         });
       case LogicalKeyboardKey.keyB:
         ref.read(sidebarCollapsedProvider.notifier).state =
@@ -117,6 +128,24 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
         return false;
     }
     return true;
+  }
+
+  void _focusSidebar() {
+    ref.read(sidebarCollapsedProvider.notifier).state = false;
+    // Narrow layout keeps the sidebar inside a Drawer — open it first.
+    if (MediaQuery.sizeOf(context).width < 760) {
+      _narrowScaffoldKey.currentState?.openDrawer();
+    }
+    // Wait a frame: the sidebar may have just mounted (was collapsed, or
+    // the drawer was closed). Then land on the first focusable row — not
+    // the invisible wrapper Focus — so arrows/Enter have a visible target.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final node = ref.read(sidebarFocusProvider);
+      final target =
+          node.descendants.where((d) => d.canRequestFocus).firstOrNull;
+      (target ?? node).requestFocus();
+    });
   }
 
   void _bumpZoom(int dir) {
@@ -179,6 +208,7 @@ class _NarrowLayout extends ConsumerWidget {
     final theme = ref.watch(brainThemeProvider);
     final openPath = ref.watch(openPathProvider);
     return Scaffold(
+      key: _narrowScaffoldKey,
       appBar: AppBar(
         title: Text(
           openPath?.split('/').last ?? 'brain',
@@ -393,6 +423,7 @@ class _SectionHeader extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: onToggle,
+        focusColor: theme.accent.withValues(alpha: 0.18),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 7, 8, 7),
           child: Row(

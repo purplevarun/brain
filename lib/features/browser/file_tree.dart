@@ -238,6 +238,7 @@ class _Row extends StatelessWidget {
         cursor: SystemMouseCursors.click,
         child: InkWell(
           onTap: onTap,
+          focusColor: theme.accent.withValues(alpha: 0.18),
           child: Container(
             color: selected ? theme.accent.withValues(alpha: 0.12) : null,
             padding: EdgeInsets.only(
