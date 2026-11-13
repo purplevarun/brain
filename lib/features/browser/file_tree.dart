@@ -91,6 +91,22 @@ class _TreeRow extends ConsumerStatefulWidget {
 
 class _TreeRowState extends ConsumerState<_TreeRow> {
   bool _expanded = true;
+  late final Map<String, FocusNode> _focusMap;
+  FocusNode? _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    // Saved in a field: ref is unsafe inside dispose().
+    _focusMap = ref.read(rowFocusNodesProvider);
+    _focusNode = _focusMap.putIfAbsent(widget.node.relPath, FocusNode.new);
+  }
+
+  @override
+  void dispose() {
+    _focusMap.remove(widget.node.relPath)?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +122,7 @@ class _TreeRowState extends ConsumerState<_TreeRow> {
             depth: widget.depth,
             selected: false,
             theme: theme,
+            focusNode: _focusNode,
             onTap: () => setState(() => _expanded = !_expanded),
             onMenu: (pos) => _showMenu(context, pos, node),
             leading: Icon(
@@ -137,6 +154,7 @@ class _TreeRowState extends ConsumerState<_TreeRow> {
       depth: widget.depth,
       selected: selected,
       theme: theme,
+      focusNode: _focusNode,
       onTap: () {
         ref.read(openPathProvider.notifier).state = node.relPath;
         widget.onOpenFile?.call();
@@ -217,11 +235,13 @@ class _Row extends StatelessWidget {
     required this.label,
     this.leading,
     this.dimmed = false,
+    this.focusNode,
   });
 
   final int depth;
   final bool selected;
   final BrainTheme theme;
+  final FocusNode? focusNode;
   final VoidCallback onTap;
   final void Function(Offset pos) onMenu;
   final Widget icon;
@@ -238,6 +258,7 @@ class _Row extends StatelessWidget {
         cursor: SystemMouseCursors.click,
         child: InkWell(
           onTap: onTap,
+          focusNode: focusNode,
           focusColor: theme.accent.withValues(alpha: 0.18),
           child: Container(
             color: selected ? theme.accent.withValues(alpha: 0.12) : null,

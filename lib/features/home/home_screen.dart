@@ -137,14 +137,28 @@ class _ShortcutsState extends ConsumerState<_Shortcuts> {
       _narrowScaffoldKey.currentState?.openDrawer();
     }
     // Wait a frame: the sidebar may have just mounted (was collapsed, or
-    // the drawer was closed). Then land on the first focusable row — not
-    // the invisible wrapper Focus — so arrows/Enter have a visible target.
+    // the drawer was closed). Prefer the open file's row — VS Code-style
+    // "reveal active file" — else the first focusable row; never the
+    // invisible wrapper Focus.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final node = ref.read(sidebarFocusProvider);
-      final target =
-          node.descendants.where((d) => d.canRequestFocus).firstOrNull;
-      (target ?? node).requestFocus();
+      final openPath = ref.read(openPathProvider);
+      final openRow = openPath == null
+          ? null
+          : ref.read(rowFocusNodesProvider)[openPath];
+      final target = (openRow != null && openRow.context != null)
+          ? openRow
+          : node.descendants.where((d) => d.canRequestFocus).firstOrNull ??
+              node;
+      target.requestFocus();
+      final ctx = target.context;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 120),
+        );
+      }
     });
   }
 

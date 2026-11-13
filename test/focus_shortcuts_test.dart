@@ -59,25 +59,32 @@ void main() {
 
     final container =
         ProviderScope.containerOf(tester.element(find.byType(BrainApp)));
+    // The file tree loads over real IO (runAsync window) but its future
+    // continuations flush in fake-zone microtasks (pump) — alternate
+    // until treeProvider emits, so 'note.md' gets a mounted row.
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+      if (container.read(treeProvider) is AsyncData) break;
+    }
+    await tester.pump();
     container.read(openPathProvider.notifier).state = 'note.md';
     container.read(editModeProvider.notifier).state = true;
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    final sidebarFocus = container.read(sidebarFocusProvider);
     final editorFocus = container.read(editorFocusProvider);
 
     await sendChord(tester, LogicalKeyboardKey.digit1);
     expect(editorFocus.hasFocus, isTrue, reason: 'Cmd+1 focuses editor');
 
     await sendChord(tester, LogicalKeyboardKey.digit0);
-    // Focus must land on a real focusable row inside the sidebar —
-    // the wrapper node alone is an invisible dead end.
-    expect(sidebarFocus.hasFocus || _descendantHasFocus(sidebarFocus),
-        isTrue,
-        reason: 'Cmd+0 focuses inside the sidebar');
-    expect(_focusedNode(container), isNot(sidebarFocus),
-        reason: 'a concrete row/header holds focus, not the wrapper');
+    // Focus must land on the OPEN FILE's row — VS Code-style "reveal
+    // active file" — not the invisible wrapper Focus.
+    final openRow = container.read(rowFocusNodesProvider)['note.md'];
+    expect(openRow?.hasFocus, isTrue,
+        reason: 'Cmd+0 lands on the open file\'s sidebar row');
 
     await sendChord(tester, LogicalKeyboardKey.digit1);
     expect(editorFocus.hasFocus, isTrue, reason: 'Cmd+1 refocuses editor');
@@ -149,6 +156,3 @@ void main() {
 
 bool _descendantHasFocus(FocusNode node) =>
     node.descendants.any((d) => d.hasFocus);
-
-FocusNode? _focusedNode(ProviderContainer container) =>
-    FocusManager.instance.primaryFocus;

@@ -151,3 +151,7 @@ class VaultConfigNotifier extends Notifier<VaultConfig> {
 /// Focus targets for the Cmd+0 / Cmd+1 pane-focus shortcuts.
 final sidebarFocusProvider = Provider<FocusNode>((ref) => FocusNode());
 final editorFocusProvider = Provider<FocusNode>((ref) => FocusNode());
+
+/// FocusNodes of sidebar tree rows, keyed by relPath — lets Cmd+0 land
+/// directly on the open file's row (VS Code "reveal active file").
+final rowFocusNodesProvider = Provider<Map<String, FocusNode>>((ref) => {});
