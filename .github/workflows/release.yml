@@ -140,9 +140,11 @@ jobs:
             TAG="brain_${BASE}_${n}"; n=$((n+1))
           done
           FINAL="${TAG#brain_}"
-          for f in dist/brain_${VER}*; do
-            mv "$f" "${f/brain_${VER}/brain_${FINAL}}"
-          done
+          if [ "$FINAL" != "$VER" ]; then
+            for f in dist/brain_${VER}*; do
+              mv "$f" "${f/brain_${VER}/brain_${FINAL}}"
+            done
+          fi
           cat > notes.md <<EOF
           brain ${FINAL}
 
