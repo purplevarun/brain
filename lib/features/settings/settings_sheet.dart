@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -5,29 +6,81 @@ import '../../app/theme/brain_theme.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../core/providers.dart';
 import '../../core/vault_config.dart';
+import '../../core/widgets.dart';
 import '../vault/backup.dart';
 
-/// Bottom-sheet (mobile) / dialog (desktop) with theme picker + vault actions.
+bool _settingsVisible = false;
+
+/// Bottom-sheet (mobile) / dialog (desktop) with theme picker + vault
+/// actions. Ctrl/Cmd+, toggles — reopening while visible closes it
+/// instead of stacking another sheet.
 Future<void> showSettings(BuildContext context) {
-  return showModalBottomSheet(
+  if (_settingsVisible) {
+    Navigator.of(context).maybePop();
+    return Future.value();
+  }
+  _settingsVisible = true;
+  return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
     builder: (_) => const _SettingsSheet(),
-  );
+  ).whenComplete(() => _settingsVisible = false);
 }
 
-class _SettingsSheet extends ConsumerWidget {
+class _SettingsSheet extends ConsumerStatefulWidget {
   const _SettingsSheet();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SettingsSheet> createState() => _SettingsSheetState();
+}
+
+class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
+  final _scroll = ScrollController();
+  final _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final delta = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowDown => 64.0,
+      LogicalKeyboardKey.arrowUp => -64.0,
+      LogicalKeyboardKey.pageDown => 420.0,
+      LogicalKeyboardKey.pageUp => -420.0,
+      LogicalKeyboardKey.end => _scroll.position.maxScrollExtent + 1,
+      LogicalKeyboardKey.home => -_scroll.position.maxScrollExtent - 1,
+      _ => 0.0,
+    };
+    if (delta == 0) return KeyEventResult.ignored;
+    final pos = _scroll.position;
+    _scroll.animateTo(
+      (pos.pixels + delta).clamp(0.0, pos.maxScrollExtent),
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOut,
+    );
+    return KeyEventResult.handled;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = ref.watch(brainThemeProvider);
     final vaultPath = ref.watch(vaultPathProvider);
     final config = ref.watch(vaultConfigProvider);
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    return EscapePop(
+      child: Focus(
+        focusNode: _focus,
+        autofocus: true,
+        onKeyEvent: _onKey,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            controller: _scroll,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,6 +235,8 @@ class _SettingsSheet extends ConsumerWidget {
                 ),
               ),
           ],
+            ),
+          ),
         ),
       ),
     );
@@ -200,7 +255,10 @@ const _shortcuts = [
   ('Ctrl/Cmd+=  ·  -', 'Zoom in / out'),
   ('Ctrl/Cmd+Shift+0', 'Reset zoom'),
   ('Tab  /  Shift+Tab', 'Indent / dedent lines in editor'),
-  ('Ctrl/Cmd+,', 'Settings'),
+  ('Ctrl/Cmd+,', 'Settings (toggle)'),
+  ('Arrows / Enter', 'Move around the sidebar'),
+  ('↑ ↓ PgUp PgDn', 'Scroll this sheet'),
+  ('Esc', 'Close dialogs and sheets'),
 ];
 
 class _ThemeChip extends StatelessWidget {

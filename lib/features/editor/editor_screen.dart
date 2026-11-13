@@ -178,20 +178,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen>
                 ref.read(editModeProvider.notifier).state = edit,
           ),
           Expanded(
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(
-                  ref.watch(vaultConfigProvider).zoom,
-                ),
-              ),
-              child: editMode
-                  ? _buildEditor(theme)
-                  : NotePreview(
-                      relPath: openPath,
-                      raw: _controller.text,
-                      onToggleCheckbox: toggleCheckbox,
-                    ),
-            ),
+            child: editMode
+                ? _buildEditor(theme)
+                : NotePreview(
+                    relPath: openPath,
+                    raw: _controller.text,
+                    onToggleCheckbox: toggleCheckbox,
+                  ),
           ),
           if (_dragging)
             Container(

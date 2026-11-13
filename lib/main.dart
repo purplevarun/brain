@@ -51,7 +51,34 @@ class BrainApp extends ConsumerWidget {
       theme: theme,
       darkTheme: theme,
       themeMode: ThemeMode.dark,
+      builder: (context, child) => _WindowZoom(child: child!),
       home: const HomeScreen(),
+    );
+  }
+}
+
+/// Whole-window zoom (VS Code/Electron style): the subtree lays out at
+/// size/zoom then scales up, so text AND chrome scale uniformly — dialogs,
+/// sheets and tooltips included, since they live in the Navigator overlay.
+class _WindowZoom extends ConsumerWidget {
+  const _WindowZoom({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final zoom = ref.watch(vaultConfigProvider).zoom;
+    if (zoom == 1.0) return child;
+    return LayoutBuilder(
+      builder: (context, c) => Transform.scale(
+        scale: zoom,
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: c.maxWidth / zoom,
+          height: c.maxHeight / zoom,
+          child: child,
+        ),
+      ),
     );
   }
 }

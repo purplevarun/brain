@@ -13,7 +13,7 @@ class VaultConfig {
   /// the user tunes it in Settings.
   final int autosaveMs;
 
-  /// Text zoom for the editor + preview surfaces (1.0 = 100%).
+  /// Whole-window zoom factor (1.0 = 100%), VS Code style.
   final double zoom;
 
   static const minAutosaveMs = 100;

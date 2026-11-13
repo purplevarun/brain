@@ -268,9 +268,14 @@ class VaultSidebar extends ConsumerWidget {
             ),
             Divider(height: 1, color: theme.border),
             Expanded(
-              child: Focus(
-                focusNode: ref.watch(sidebarFocusProvider),
-                child: _SidebarSections(onOpenFile: closeDrawerIfAny),
+              child: FocusTraversalGroup(
+                // Arrow keys walk rows/headers; Enter activates the
+                // focused row (InkWell ActivateIntent). Cmd+0 lands here.
+                policy: WidgetOrderTraversalPolicy(),
+                child: Focus(
+                  focusNode: ref.watch(sidebarFocusProvider),
+                  child: _SidebarSections(onOpenFile: closeDrawerIfAny),
+                ),
               ),
             ),
           ],

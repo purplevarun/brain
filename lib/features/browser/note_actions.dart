@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/naming.dart';
 import '../../core/providers.dart';
+import '../../core/widgets.dart';
 import '../daily/daily_note.dart';
 
 /// Shared dialogs/actions for creating, renaming and deleting vault items.
@@ -83,7 +84,8 @@ class NoteActions {
     final name = relPath.split('/').last;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => EscapePop(
+        child: AlertDialog(
         title: const Text('Delete?'),
         content: Text('Delete "$name"? This removes the file from disk.'),
         actions: [
@@ -96,6 +98,7 @@ class NoteActions {
             child: const Text('Delete'),
           ),
         ],
+        ),
       ),
     );
     if (ok != true) return;
@@ -115,7 +118,8 @@ class NoteActions {
     final controller = TextEditingController(text: initial);
     return showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => EscapePop(
+        child: AlertDialog(
         title: Text(title),
         content: TextField(
           controller: controller,
@@ -133,6 +137,7 @@ class NoteActions {
             child: Text(ok),
           ),
         ],
+        ),
       ),
     );
   }

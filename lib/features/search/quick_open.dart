@@ -96,6 +96,8 @@ class _QuickOpenDialogState extends ConsumerState<_QuickOpenDialog> {
                 } else if (e.logicalKey == LogicalKeyboardKey.enter &&
                     _results.isNotEmpty) {
                   _open(_results[_selected]);
+                } else if (e.logicalKey == LogicalKeyboardKey.escape) {
+                  Navigator.of(context).maybePop();
                 }
               },
               child: TextField(
